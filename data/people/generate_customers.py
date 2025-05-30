@@ -10,7 +10,7 @@ random.seed(42)
 def init_postgres():
     conn = psycopg2.connect(
         host="postgres",
-        database="sales",
+        database="people",
         user="admin",
         password="admin"
     )

@@ -16,7 +16,7 @@
 
 MongoDB
 ```
-docker exec -it project_python-mongodb-1 mongosh
+docker exec -it salesanalysis-mongodb-1 mongosh "mongodb://admin:admin@mongodb:27017"
 use sales
 show collections
 db.products.find({}, { name: 1, price: 1 }).limit(5).pretty()
@@ -24,7 +24,7 @@ db.products.find({}, { name: 1, price: 1 }).limit(5).pretty()
 
 PostgreSQL
 ```
-docker exec -it project_python-postgres-1 psql -U admin -d sales
+docker exec -it salesanalysis-postgres-1 psql -U admin -d sales
 ```
 
 ClickHouse

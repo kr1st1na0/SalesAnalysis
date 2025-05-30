@@ -1,6 +1,7 @@
 import json
 from clickhouse_driver import Client as ClickHouseClient
 from kafka import KafkaConsumer
+from datetime import datetime
 
 def init_clickhouse():
     try:
@@ -47,7 +48,7 @@ def consume_from_kafka():
             data['seller_id'],
             data['product_id'],
             data['quantity'],
-            data['sale_date'],
+            datetime.strptime(data['sale_date'], "%Y-%m-%d %H:%M:%S"),
             data['amount'],
             data['discount']
         ))
