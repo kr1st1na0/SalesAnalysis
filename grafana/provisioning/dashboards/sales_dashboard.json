@@ -1,0 +1,71 @@
+{
+    "id": null,
+    "uid": "sales-dashboard",
+    "title": "Sales Dashboard",
+    "timezone": "browser",
+    "schemaVersion": 30,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "type": "graph",
+        "title": "Sales Over Time",
+        "datasource": "ClickHouse",
+        "targets": [
+          {
+            "query": "SELECT toStartOfHour(sale_date) AS t, sum(amount) AS total_sales FROM sales_stage WHERE sale_date >= now() - INTERVAL 6 MONTH GROUP BY t ORDER BY t",
+            "format": "time_series"
+          }
+        ],
+        "xaxis": { "mode": "time" },
+        "yaxes": [{}, {}],
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 9 }
+      },
+      {
+        "type": "barchart",
+        "title": "Top 10 Products",
+        "datasource": "ClickHouse",
+        "targets": [
+          {
+            "query": "SELECT product_id, sum(amount) as total_sales FROM sales_stage GROUP BY product_id ORDER BY total_sales DESC LIMIT 10",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "showValue": "auto",
+          "barWidth": 0.8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyEUR"
+          }
+        },
+        "gridPos": { "x": 0, "y": 9, "w": 12, "h": 8 }
+      },
+      {
+        "type": "barchart",
+        "title": "Sales by Seller",
+        "datasource": "ClickHouse",
+        "targets": [
+          {
+            "query": "SELECT seller_id, sum(amount) as total_sales FROM sales_stage GROUP BY seller_id ORDER BY total_sales DESC LIMIT 10",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "showValue": "auto",
+          "barWidth": 0.8
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyEUR"
+          }
+        },
+        "gridPos": { "x": 12, "y": 9, "w": 12, "h": 8 }
+      }
+    ],
+    "overwrite": true,
+    "folderId": 0
+}
