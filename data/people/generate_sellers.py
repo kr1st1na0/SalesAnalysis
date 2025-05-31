@@ -50,7 +50,7 @@ def generate_sellers(num=50):
                 fake.last_name(),
                 fake.email(),
                 phone,
-                fake.date_between(start_date='-5y', end_date='today'),
+                datetime.now(),
                 random.choice(departments)
             )
         )

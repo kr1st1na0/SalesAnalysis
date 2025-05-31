@@ -48,7 +48,7 @@ def generate_customers(num=1000):
                 fake.last_name(),
                 fake.email(),
                 phone,
-                fake.date_between(start_date='-2y', end_date='today'),
+                datetime.now(),
                 random.randint(1, 5)
             )
         )
