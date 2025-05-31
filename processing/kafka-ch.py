@@ -17,7 +17,11 @@ def create_table(client):
     CREATE TABLE IF NOT EXISTS sales_stage (
         sale_id String,
         customer_id Int32,
+        customer_first_name String,
+        customer_last_name String,
         seller_id Int32,
+        seller_first_name String,
+        seller_last_name String,
         product_id String,
         quantity Int32,
         sale_date DateTime,
@@ -45,7 +49,11 @@ def consume_from_kafka():
         batch.append((
             data['sale_id'],
             data['customer_id'],
+            data['customer_first_name'],
+            data['customer_last_name'],
             data['seller_id'],
+            data['seller_first_name'],
+            data['seller_last_name'],
             data['product_id'],
             data['quantity'],
             datetime.strptime(data['sale_date'], "%Y-%m-%d %H:%M:%S"),

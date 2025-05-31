@@ -29,14 +29,30 @@ def init_kafka():
 def generate_sales(num=10000):
     producer = init_kafka()
 
-    # Получаем ID клиентов и продавцов
+    # Получаем ID клиентов и продавцов, а также их имена и фамилии
     pg_conn = init_postgres()
     pg_cur = pg_conn.cursor()
-    pg_cur.execute("SELECT customer_id FROM customers")
-    customer_ids = [row[0] for row in pg_cur.fetchall()]
     
-    pg_cur.execute("SELECT seller_id FROM sellers")
-    seller_ids = [row[0] for row in pg_cur.fetchall()]
+    pg_cur.execute("SELECT customer_id, first_name, last_name FROM customers")
+    customer_info = [
+        {
+            'id': row[0],
+            'first_name': row[1],
+            'last_name': row[2]
+        }
+        for row in pg_cur.fetchall()
+    ]
+    
+    pg_cur.execute("SELECT seller_id, first_name, last_name FROM sellers")
+    seller_info = [
+        {
+            'id': row[0],
+            'first_name': row[1],
+            'last_name': row[2]
+        }
+        for row in pg_cur.fetchall()
+    ]
+
     pg_conn.close()
     
     # Получаем товары
@@ -53,8 +69,10 @@ def generate_sales(num=10000):
     for i in range(1, num + 1):
         try:
             sale_date = fake.date_time_between(start_date='-6m', end_date='now')
-            customer_id = random.choice(customer_ids)
-            seller_id = random.choice(seller_ids)
+            
+            customer = random.choice(customer_info)
+            seller = random.choice(seller_info)
+            
             product = random.choice(valid_products)
             product_id = str(product['_id'])
             quantity = random.randint(1, 5)
@@ -65,8 +83,12 @@ def generate_sales(num=10000):
             
             sale_data = {
                 'sale_id': f'sale_{i}',
-                'customer_id': customer_id,
-                'seller_id': seller_id,
+                'customer_id': customer['id'],
+                'customer_first_name': customer['first_name'],
+                'customer_last_name': customer['last_name'],
+                'seller_id': seller['id'],
+                'seller_first_name': seller['first_name'],
+                'seller_last_name': seller['last_name'],
                 'product_id': product_id,
                 'quantity': quantity,
                 'sale_date': sale_date.strftime('%Y-%m-%d %H:%M:%S'),
