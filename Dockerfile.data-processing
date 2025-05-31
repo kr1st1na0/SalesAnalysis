@@ -7,7 +7,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY pipeline/ ./pipeline/
 
-CMD python pipeline/stage_layer/postgres_extractor.py && \
-    python pipeline/stage_layer/mongodb_extractor.py && \
-    python pipeline/stage_layer/kafka_consumer.py && \
+CMD python pipeline/stage_layer/extractor.py && \
     python pipeline/processing/streaming/kafka-ch.py

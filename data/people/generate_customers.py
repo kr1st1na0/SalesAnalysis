@@ -28,10 +28,10 @@ def generate_customers(num=1000):
         DROP TABLE IF EXISTS customers CASCADE;
         CREATE TABLE customers (
             customer_id SERIAL PRIMARY KEY,
-            first_name VARCHAR(50),
-            last_name VARCHAR(50),
-            email VARCHAR(100),
-            phone VARCHAR(50),
+            first_name VARCHAR(255),
+            last_name VARCHAR(255),
+            email VARCHAR(255),
+            phone VARCHAR(255),
             registration_date DATE,
             loyalty_level INT
         );
