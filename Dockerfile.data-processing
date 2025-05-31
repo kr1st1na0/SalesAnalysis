@@ -5,7 +5,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY processing/ ./processing/
+COPY pipeline/ ./pipeline/
 
-CMD python processing/extract.py && \
-    python processing/kafka-ch.py
+CMD python pipeline/stage_layer/postgres_extractor.py && \
+    python pipeline/stage_layer/mongodb_extractor.py && \
+    python pipeline/stage_layer/kafka_consumer.py && \
+    python pipeline/processing/streaming/kafka-ch.py

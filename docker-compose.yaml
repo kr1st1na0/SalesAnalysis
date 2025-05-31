@@ -152,7 +152,10 @@ services:
         condition: service_started
     volumes:
       - ./data:/app/data
-      - ./processing:/app/processing
+      - ./pipeline/stage_layer:/app/pipeline/stage_layer
+      - ./pipeline/processing/streaming:/app/pipeline/processing/streaming
+      - ./pipeline/processing/batch:/app/pipeline/processing/batch
+
 
 volumes:
   postgres_people_data:

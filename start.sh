@@ -30,5 +30,3 @@ docker-compose run --rm data-generator
 
 echo "Starting data-processing..."
 docker-compose up -d data-processing
-
-echo "data-processing finished."
