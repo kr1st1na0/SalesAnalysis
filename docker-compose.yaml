@@ -1,9 +1,7 @@
-version: '3.8'
-
 services:
-  postgres:
+  postgres_people:
     image: postgres:13
-    container_name: postgres
+    container_name: postgres_people
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
@@ -11,9 +9,26 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_people_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d people"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres_stage:
+    image: postgres:13
+    container_name: postgres_stage
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: stage_layer
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_stage_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d stage_layer"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -108,13 +123,13 @@ services:
     environment:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
 
-  data-processor:
-    container_name: data-processor
+  data-generator:
+    container_name: data-generator
     build:
       context: .
-      dockerfile: Dockerfile.data-processor
+      dockerfile: Dockerfile.data-generator
     depends_on:
-      postgres:
+      postgres_people:
         condition: service_healthy
       mongodb:
         condition: service_healthy
@@ -122,10 +137,25 @@ services:
         condition: service_healthy
     volumes:
       - ./data:/app/data
+
+  data-processing:
+    container_name: data-processing
+    build:
+      context: .
+      dockerfile: Dockerfile.data-processing
+    depends_on:
+      postgres_stage:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      clickhouse:
+        condition: service_started
+    volumes:
       - ./processing:/app/processing
 
 volumes:
-  postgres_data:
+  postgres_people_data:
+  postgres_stage_data:
   mongodb_data:
   clickhouse_data:
   grafana_data:

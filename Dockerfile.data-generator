@@ -5,11 +5,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY data ./data
-COPY processing/kafka-ch.py ./processing/kafka-ch.py
+COPY data/ ./data/
 
 CMD python data/people/generate_customers.py && \
     python data/people/generate_sellers.py && \
     python data/products/generate_products.py && \
-    python data/sales/generate_sales.py && \
-    python processing/kafka-ch.py
+    python data/sales/generate_sales.py 

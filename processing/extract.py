@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import psycopg2
 from kafka import KafkaConsumer
+import json
 
 # Инициализация всех бдшек
 def init_postgres():
@@ -28,8 +29,8 @@ def init_kafka():
 # Инициализация стейдж слоя
 def init_stage_layer():
     conn = psycopg2.connect(
-        host="postgres",
-        database="", #!!!
+        host="postgres_stage",
+        database="stage_layer",
         user="admin",
         password="admin"
     )

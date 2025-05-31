@@ -13,7 +13,7 @@ random.seed(42)
 
 def init_postgres():
     conn = psycopg2.connect(
-        host="postgres",
+        host="postgres_people",
         database="people",
         user="admin",
         password="admin"
@@ -68,7 +68,7 @@ def generate_sales(num=10000):
     
     for i in range(1, num + 1):
         try:
-            sale_date = fake.date_time_between(start_date='-6m', end_date='now')
+            sale_date = fake.date_time_between(start_date='-180d', end_date='now')
             
             customer = random.choice(customer_info)
             seller = random.choice(seller_info)
