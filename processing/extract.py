@@ -22,7 +22,9 @@ def init_mongodb():
 def init_kafka():
     return KafkaConsumer(
         'sales',
-        bootstrap_servers='localhost:9092',
+        bootstrap_servers=['kafka:9092'],
+        auto_offset_reset='earliest',
+        group_id='clickhouse_group',
         value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )
 
@@ -64,12 +66,12 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS products (
             product_id VARCHAR(50) PRIMARY KEY,
-            name VARCHAR(50),
-            category VARCHAR(50),
+            name VARCHAR(225),
+            category VARCHAR(225),
             price NUMERIC(10,2),
             cost NUMERIC(10,2),
             stock_quantity INT,
-            manufacturer VARCHAR(50),
+            manufacturer VARCHAR(225),
             created_at TIMESTAMP
         )
         """,
@@ -77,17 +79,17 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS sales (
             sale_id VARCHAR(50) PRIMARY KEY,
             customer_id INT REFERENCES customers(customer_id),
-            customer_first_name VARCHAR(50),
-            customer_last_name VARCHAR(50),
+            customer_first_name VARCHAR(225),
+            customer_last_name VARCHAR(225),
             seller_id INT REFERENCES sellers(seller_id),
-            seller_first_name VARCHAR(50),
-            seller_last_name VARCHAR(50),
-            product_id VARCHAR(50) REFERENCES products(product_id),
+            seller_first_name VARCHAR(225),
+            seller_last_name VARCHAR(225),
+            product_id VARCHAR(225) REFERENCES products(product_id),
             quantity INT,
             sale_date TIMESTAMP,
             amount NUMERIC(10,2),
             discount NUMERIC(10,2),
-            product_name VARCHAR(50)
+            product_name VARCHAR(225)
         )
         """
     )
@@ -110,11 +112,19 @@ def transfer_postgres_data():
 
     # Копируем sellers
     src_cur.execute("SELECT * FROM sellers")
-    dest_cur.executemany("INSERT INTO sellers VALUES (%s, %s, %s)", src_cur.fetchall())
+    sellers_data = src_cur.fetchall()
+    dest_cur.executemany(
+        "INSERT INTO sellers (seller_id, first_name, last_name, email, phone, hire_date, department) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        sellers_data
+    )
 
     # Копируем customers
     src_cur.execute("SELECT * FROM customers")
-    dest_cur.executemany("INSERT INTO customers VALUES (%s, %s, %s)", dest_cur.fetchall())
+    customers_data = src_cur.fetchall()
+    dest_cur.executemany(
+        "INSERT INTO customers (customer_id, first_name, last_name, email, phone, registration_date, loyalty_level) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+        customers_data
+    )
 
     dest_conn.commit()
     dest_cur.close()
@@ -175,7 +185,7 @@ def consume_sales_from_kafka():
             pg_cur.execute(
                 """
                 INSERT INTO sales (sale_id, customer_id, customer_first_name, customer_last_name, seller_id, seller_first_name, seller_last_name, product_id, quantity, sale_date, amount, discount, product_name)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (sale_id) DO NOTHING
                 """,
                 (
