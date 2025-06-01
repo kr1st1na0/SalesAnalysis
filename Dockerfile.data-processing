@@ -7,5 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY pipeline/ ./pipeline/
 
-CMD python pipeline/stage_layer/extractor.py && \
-    python pipeline/processing/streaming/kafka-ch.py
+CMD bash -c "\
+    python pipeline/stage_layer/extractor.py & \
+    python pipeline/processing/streaming/kafka-ch.py & \
+    wait"

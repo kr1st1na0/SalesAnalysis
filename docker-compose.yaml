@@ -89,6 +89,11 @@ services:
     volumes:
       - ./clickhouse-config/users.xml:/etc/clickhouse-server/users.xml
       - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   spark-master:
     image: bitnami/spark:3.4.0
@@ -109,6 +114,37 @@ services:
       - SPARK_WORKER_CORES=2
     depends_on:
       - spark-master
+      
+  airflow-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-webserver
+    depends_on:
+      - airflow-scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres_stage:5432/stage_layer
+    volumes:
+      - ./pipeline/processing/batch:/opt/airflow/dags
+    ports:
+      - "8081:8080"
+    command: webserver
+
+  airflow-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    container_name: airflow-scheduler
+    depends_on:
+      postgres_stage:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://admin:admin@postgres_stage:5432/stage_layer
+    volumes:
+      - ./pipeline/processing/batch:/opt/airflow/dags
+    command: scheduler
 
   grafana:
     image: grafana/grafana:9.5.2
@@ -149,7 +185,7 @@ services:
       kafka:
         condition: service_healthy
       clickhouse:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./data:/app/data
       - ./pipeline/stage_layer:/app/pipeline/stage_layer

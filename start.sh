@@ -22,11 +22,21 @@ check_health "postgres_people" "postgres_people"
 check_health "mongodb" "mongodb"
 check_health "kafka" "kafka"
 check_health "postgres_stage" "postgres_stage"
+check_health "clickhouse" "clickhouse"
 
-
-
-echo "Running data-generator"
+echo "Running data-generator..."
 docker-compose run --rm data-generator
 
 echo "Starting data-processing..."
 docker-compose up -d data-processing
+
+echo "Initializing Airflow DB and creating user..."
+docker-compose run --rm airflow-webserver bash -c "
+  airflow db migrate &&
+  airflow users create --username admin --firstname Air --lastname Flow --role Admin --email admin@example.com --password admin
+"> /dev/null 2>&1
+
+echo "Starting Airflow scheduler and webserver..."
+docker-compose up -d airflow-scheduler airflow-webserver
+
+echo "All services are up and running."

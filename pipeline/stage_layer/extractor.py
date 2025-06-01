@@ -2,6 +2,7 @@ from pymongo import MongoClient
 import psycopg2
 from kafka import KafkaConsumer
 import json
+from bson.objectid import ObjectId 
 
 # Инициализация сорсов
 def init_postgres():
