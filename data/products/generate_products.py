@@ -16,6 +16,9 @@ def init_mongodb():
 def generate_products(num=500):
     db = init_mongodb()
     products = db.products
+
+    # Очищаем коллекцию перед генерацией новых данных
+    products.delete_many({})
     
     categories = ['Electronics', 'Clothing', 'Home', 'Sports', 'Automotive', 'Books', 'Toys', 'Beauty']
     

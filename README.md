@@ -1,45 +1,11 @@
 # SalesAnalysis
 
+### Сборка и запуск
 
-Пересборка докер файла:
-
-```docker-compose build --no-cache```
-
-
-Полная пересборка с удалением всех образов:
-
-```docker-compose down --volumes --remove-orphans \
-  && docker-compose build --no-cache \
-  && docker-compose up -d
+Поднимаем контейнер
 ```
-
-
-MongoDB
+docker compose up -d
 ```
-docker exec -it salesanalysis-mongodb-1 mongosh "mongodb://admin:admin@mongodb:27017"
-use sales
-show collections
-db.products.find({}, { name: 1, price: 1 }).limit(5).pretty()
-```
-
-PostgreSQL(изначальная)
-```
-docker exec -it postgres_people psql -U admin -d people
-```
-
-PostgreSQL (стейдж слой)
-```
-docker exec -it postgres_stage psql -U admin -d stage_layer
-```
-
-ClickHouse
-```
-docker exec -it clickhouse clickhouse-client
-SELECT * FROM sales_stage LIMIT 5;
-```
-
-## Сборка
-
 Пересборка образов
 ```
 docker-compose build data-generator data-processing
@@ -52,7 +18,7 @@ chmod +x start.sh
 ```
 ./start.sh
 ```
-Для повторного запуска сначала останавливаем контейнер
+### Для повторного запуска сначала останавливаем контейнер
 ```
 docker-compose down -v
 ```
@@ -60,4 +26,46 @@ docker-compose down -v
 ```
 docker-compose down --volumes --remove-orphans \
   && docker-compose build --no-cache
+```
+
+### MongoDB (товары)
+```
+docker exec -it mongodb mongosh -u admin -p admin --authenticationDatabase admin sales
+```
+
+```
+show collections
+
+db.products.find().limit(5).pretty()
+
+db.products.countDocuments()
+```
+
+### PostgreSQL(продавцы и клиенты)
+```
+docker exec -it postgres_people psql -U admin -d people
+```
+
+### PostgreSQL (стейдж слой)
+```
+docker exec -it postgres_stage psql -U admin -d stage_layer
+```
+
+### ClickHouse
+```
+docker exec -it clickhouse clickhouse-client
+SELECT * FROM sales_stage LIMIT 5;
+```
+
+_________________
+### Пересборка докер файла:
+
+```docker-compose build --no-cache```
+
+
+### Полная пересборка с удалением всех образов:
+
+```docker-compose down --volumes --remove-orphans \
+  && docker-compose build --no-cache \
+  && docker-compose up -d
 ```
