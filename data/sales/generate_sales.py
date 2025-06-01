@@ -33,25 +33,11 @@ def generate_sales(num=10000):
     pg_conn = init_postgres()
     pg_cur = pg_conn.cursor()
     
-    pg_cur.execute("SELECT customer_id, first_name, last_name FROM customers")
-    customer_info = [
-        {
-            'id': row[0],
-            'first_name': row[1],
-            'last_name': row[2]
-        }
-        for row in pg_cur.fetchall()
-    ]
-    
-    pg_cur.execute("SELECT seller_id, first_name, last_name FROM sellers")
-    seller_info = [
-        {
-            'id': row[0],
-            'first_name': row[1],
-            'last_name': row[2]
-        }
-        for row in pg_cur.fetchall()
-    ]
+    pg_cur.execute("SELECT customer_id FROM customers")
+    customer_info = [row[0] for row in pg_cur.fetchall()]
+
+    pg_cur.execute("SELECT seller_id FROM sellers")
+    seller_info = [row[0] for row in pg_cur.fetchall()]
 
     pg_conn.close()
     
@@ -59,8 +45,7 @@ def generate_sales(num=10000):
     mongo_db = MongoClient("mongodb://admin:admin@mongodb:27017/").sales
     valid_products = list(mongo_db.products.find({}, {
         '_id': 1,
-        'price': 1,
-        'name': 1
+        'price': 1
     }))
     
     if not valid_products:
@@ -83,24 +68,19 @@ def generate_sales(num=10000):
             
             sale_data = {
                 'sale_id': f'sale_{i}',
-                'customer_id': customer['id'],
-                'customer_first_name': customer['first_name'],
-                'customer_last_name': customer['last_name'],
-                'seller_id': seller['id'],
-                'seller_first_name': seller['first_name'],
-                'seller_last_name': seller['last_name'],
+                'customer_id': customer,
+                'seller_id': seller,
                 'product_id': product_id,
                 'quantity': quantity,
                 'sale_date': sale_date.strftime('%Y-%m-%d %H:%M:%S'),
                 'amount': amount,
-                'discount': discount,
-                'product_name': product.get('name', 'Unknown')
+                'discount': discount
             }
 
             producer.send('sales', value=sale_data)
 
             if i % 1000 == 0:
-                print(f"Generated {i} sales (Product: {product['name']}, Amount: {amount})")
+                print(f"Generated {i} sales")
                 time.sleep(0.1)
                 
         except Exception as e:
