@@ -190,7 +190,6 @@ services:
       - ./data:/app/data
       - ./pipeline/stage_layer:/app/pipeline/stage_layer
       - ./pipeline/processing/streaming:/app/pipeline/processing/streaming
-      - ./pipeline/processing/batch:/app/pipeline/processing/batch
 
 
 volumes:

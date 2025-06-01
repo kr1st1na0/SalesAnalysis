@@ -2,10 +2,6 @@
 
 ### Сборка и запуск
 
-Поднимаем контейнер
-```
-docker compose up -d
-```
 Пересборка образов
 ```
 docker-compose build data-generator data-processing
