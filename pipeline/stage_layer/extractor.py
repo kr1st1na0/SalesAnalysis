@@ -2,7 +2,7 @@ from pymongo import MongoClient
 import psycopg2
 from kafka import KafkaConsumer
 import json
-from bson.objectid import ObjectId 
+from bson import ObjectId
 
 # Инициализация сорсов
 def init_postgres():
@@ -137,10 +137,14 @@ def get_seller(seller_id):
 def get_product(product_id):
     db = init_mongodb()
     try:
-        object_id = ObjectId(product_id)
-        product = db.products.find_one({"_id": object_id})
-    except:
+        if isinstance(product_id, str):
+            product_id = ObjectId(product_id)
         product = db.products.find_one({"_id": product_id})
+    except Exception as e:
+        print(f"Error converting product_id {product_id}: {e}")
+        return {k: None for k in [
+            "name", "category", "price", "cost", "stock_quantity", "manufacturer", "created_at"
+        ]}
 
     if product:
         return {
