@@ -1,0 +1,61 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Data sources" as Data {
+  [PostgreSQL] as pg
+  [MongoDB] as mongo
+  [Kafka] as kafka
+}
+
+package "Stage layer" as Stage {
+  [DataBase] as db
+}
+
+package "Processing" {
+  package "Batch" {
+    [Airflow] as airflow
+  }
+
+  package "Streaming" {
+    [Kafka] as kafka2
+  }
+}
+
+package "Storage" as Storage {
+  [ClickHouse] as ch
+}
+
+package "Analytics" as Analytics {
+  [Grafana] as grafana
+}
+
+pg --> db
+mongo --> db
+kafka --> db
+
+db <--> kafka2
+db <--> airflow
+airflow --> ch
+kafka2 --> ch
+
+ch --> grafana
+
+note right of Data
+  Продавцы и клиенты
+  Товары
+  Продажи
+end note
+
+note right of Stage
+  Промежуточный слой
+end note
+
+note right of Storage
+  Агрегированные витрины
+  (данные за последние 6 месяцев)
+end note
+
+note right of Analytics
+  Дашборды
+end note
+@enduml
