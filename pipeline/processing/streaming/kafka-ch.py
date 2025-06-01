@@ -14,11 +14,11 @@ def init_clickhouse():
 
 def create_table(client):
     client.execute('''
-    CREATE TABLE IF NOT EXISTS sales_stage (
+    CREATE TABLE IF NOT EXISTS sales_facts (
         sale_id String,
-        sale_customer_id Int32,
-        sale_seller_id Int32,
-        sale_product_id String,
+        customer_id UInt64,
+        seller_id UInt64,
+        product_id UInt64,
         sale_quantity Int32,
         sale_date DateTime,
         sale_amount Float64,
@@ -54,12 +54,12 @@ def consume_from_kafka():
         ))
 
         if len(batch) >= 1000:
-            ch.execute('INSERT INTO sales_stage VALUES', batch)
+            ch.execute('INSERT INTO sales_facts VALUES', batch)
             print(f"Inserted {len(batch)} records into ClickHouse")
             batch.clear()
 
     if batch:
-        ch.execute('INSERT INTO sales_stage VALUES', batch)
+        ch.execute('INSERT INTO sales_facts VALUES', batch)
         print(f"Inserted final batch of {len(batch)} records into ClickHouse")
 
 if __name__ == '__main__':

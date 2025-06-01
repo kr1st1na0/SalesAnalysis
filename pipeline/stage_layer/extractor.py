@@ -69,7 +69,7 @@ def create_table():
 
             sale_customer_id INT,
             sale_seller_id INT,
-            sale_product_id VARCHAR(255),
+            sale_product_id INT,
             sale_quantity INT,
             sale_date TIMESTAMP,
             sale_amount NUMERIC(10,2),
@@ -134,14 +134,12 @@ def get_seller(seller_id):
         return {k: None for k in ["first_name", "last_name", "email", "phone", "hire_date", "department"]}
 
 # Берем данные из MongoDB
-def get_product(product_id):
+def get_product(product_num_id):
     db = init_mongodb()
     try:
-        if isinstance(product_id, str):
-            product_id = ObjectId(product_id)
-        product = db.products.find_one({"_id": product_id})
+        product = db.products.find_one({"product_num_id": product_num_id})
     except Exception as e:
-        print(f"Error converting product_id {product_id}: {e}")
+        print(f"Error converting product_num_id {product_num_id}: {e}")
         return {k: None for k in [
             "name", "category", "price", "cost", "stock_quantity", "manufacturer", "created_at"
         ]}

@@ -44,7 +44,7 @@ def generate_sales(num=10000):
     # Получаем товары
     mongo_db = MongoClient("mongodb://admin:admin@mongodb:27017/").sales
     valid_products = list(mongo_db.products.find({}, {
-        '_id': 1,
+        'product_num_id': 1,
         'price': 1
     }))
     
@@ -59,7 +59,7 @@ def generate_sales(num=10000):
             seller = random.choice(seller_info)
             
             product = random.choice(valid_products)
-            product_id = str(product['_id'])
+            product_id = product['product_num_id']
             quantity = random.randint(1, 5)
             
             price = product['price']

@@ -22,8 +22,9 @@ def generate_products(num=500):
     
     categories = ['Electronics', 'Clothing', 'Home', 'Sports', 'Automotive', 'Books', 'Toys', 'Beauty']
     
-    for _ in range(num):
+    for i in range(num):
         product = {
+            "product_num_id": i + 1,
             "name": fake.catch_phrase(),
             "category": random.choice(categories),
             "price": round(random.uniform(10, 1000), 2),
