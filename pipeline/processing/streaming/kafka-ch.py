@@ -16,17 +16,13 @@ def create_table(client):
     client.execute('''
     CREATE TABLE IF NOT EXISTS sales_stage (
         sale_id String,
-        customer_id Int32,
-        customer_first_name String,
-        customer_last_name String,
-        seller_id Int32,
-        seller_first_name String,
-        seller_last_name String,
-        product_id String,
-        quantity Int32,
+        sale_customer_id Int32,
+        sale_seller_id Int32,
+        sale_product_id String,
+        sale_quantity Int32,
         sale_date DateTime,
-        amount Float64,
-        discount Float64
+        sale_amount Float64,
+        sale_discount Float64
     ) ENGINE = MergeTree()
     ORDER BY sale_date
     ''')
@@ -49,11 +45,7 @@ def consume_from_kafka():
         batch.append((
             data['sale_id'],
             data['customer_id'],
-            data['customer_first_name'],
-            data['customer_last_name'],
             data['seller_id'],
-            data['seller_first_name'],
-            data['seller_last_name'],
             data['product_id'],
             data['quantity'],
             datetime.strptime(data['sale_date'], "%Y-%m-%d %H:%M:%S"),

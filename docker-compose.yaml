@@ -15,6 +15,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - etl_net
 
   postgres_stage:
     image: postgres:13
@@ -32,6 +34,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - etl_net
 
   mongodb:
     image: mongo:6
@@ -48,6 +52,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - etl_net
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
@@ -57,6 +63,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    networks:
+      - etl_net
 
   kafka:
     image: confluentinc/cp-kafka:7.3.0
@@ -79,6 +87,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - etl_net
 
   clickhouse:
     image: clickhouse/clickhouse-server:23.3
@@ -94,6 +104,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - etl_net
 
   spark-master:
     image: bitnami/spark:3.4.0
@@ -103,6 +115,8 @@ services:
     ports:
       - "8080:8080"
       - "7077:7077"
+    networks:
+      - etl_net
 
   spark-worker:
     image: bitnami/spark:3.4.0
@@ -114,6 +128,8 @@ services:
       - SPARK_WORKER_CORES=2
     depends_on:
       - spark-master
+    networks:
+      - etl_net
       
   airflow-webserver:
     build:
@@ -130,6 +146,8 @@ services:
     ports:
       - "8081:8080"
     command: webserver
+    networks:
+      - etl_net
 
   airflow-scheduler:
     build:
@@ -145,6 +163,8 @@ services:
     volumes:
       - ./pipeline/processing/batch:/opt/airflow/dags
     command: scheduler
+    networks:
+      - etl_net
 
   grafana:
     image: grafana/grafana:9.5.2
@@ -158,6 +178,8 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
     environment:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
+    networks:
+      - etl_net
 
   data-generator:
     container_name: data-generator
@@ -173,6 +195,8 @@ services:
         condition: service_healthy
     volumes:
       - ./data:/app/data
+    networks:
+      - etl_net
 
   data-processing:
     container_name: data-processing
@@ -190,6 +214,8 @@ services:
       - ./data:/app/data
       - ./pipeline/stage_layer:/app/pipeline/stage_layer
       - ./pipeline/processing/streaming:/app/pipeline/processing/streaming
+    networks:
+      - etl_net
 
 
 volumes:
@@ -198,3 +224,7 @@ volumes:
   mongodb_data:
   clickhouse_data:
   grafana_data:
+
+networks:
+  etl_net:
+    driver: bridge
