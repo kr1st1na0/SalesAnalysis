@@ -214,6 +214,7 @@ services:
       - ./data:/app/data
       - ./pipeline/stage_layer:/app/pipeline/stage_layer
       - ./pipeline/processing/streaming:/app/pipeline/processing/streaming
+      - ./pipeline/processing/clickhouse_views:/app/pipeline/processing/clickhouse_views
     networks:
       - etl_net
 

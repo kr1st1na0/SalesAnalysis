@@ -8,8 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY pipeline/ ./pipeline/
 
 CMD bash -c "\
-    python -u pipeline/stage_layer/extractor.py & \
-    sleep 300 && python -u pipeline/processing/streaming/kafka-ch.py & \
+    python -u /app/pipeline/stage_layer/extractor.py & \
+    sleep 300 && python -u /app/pipeline/processing/streaming/kafka-ch.py & \
+    sleep 420 && python -u /app/pipeline/processing/clickhouse_views/views.py && \
     wait"
-
-
