@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# Coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Uvicorn
+*.log
+.uvicorn*
+
+# Docker
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.DS_Store

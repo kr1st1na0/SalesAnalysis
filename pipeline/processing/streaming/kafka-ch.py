@@ -53,7 +53,7 @@ def send_to_kafka(rows):
             'amount': float(row[5]),
             'discount': float(row[6])
         }
-        producer.send('sales', value=payload)
+        producer.send('sales_kf', value=payload)
         sale_id_counter += 1
     producer.flush()
     print(f"[Kafka] Sent {len(rows)} rows.")
@@ -85,7 +85,7 @@ def create_clickhouse_table(client):
 
 def consume_and_insert():
     consumer = KafkaConsumer(
-        'sales',
+        'sales_kf',
         bootstrap_servers=['kafka:9092'],
         auto_offset_reset='earliest',
         group_id='clickhouse_group',

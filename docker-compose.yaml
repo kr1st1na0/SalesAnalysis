@@ -218,6 +218,12 @@ services:
     networks:
       - etl_net
 
+  app:
+      build: .
+      ports:
+        - "8000:8000"
+      networks:
+        - etl_net
 
 volumes:
   postgres_people_data:
