@@ -1,0 +1,10 @@
+groups:
+  - name: kafka-alerts
+    rules:
+      - alert: KafkaDown
+        expr: up{job="kafka"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka instance is down"

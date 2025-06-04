@@ -2,8 +2,7 @@
 set -e
 
 echo "Starting core services..."
-docker-compose up -d postgres_people mongodb kafka postgres_stage clickhouse zookeeper grafana
-
+docker-compose up -d postgres_people mongodb kafka postgres_stage clickhouse zookeeper grafana prometheus alertmanager kafka_exporter clickhouse_exporter
 check_health() {
   service_name=$1
   container_name=$2
@@ -18,11 +17,23 @@ check_health() {
   done
 }
 
+check_http_service() {
+  name=$1
+  url=$2
+  until curl -sf "$url" > /dev/null; do
+    sleep 5
+  done
+  echo "$name is up"
+}
+
 check_health "postgres_people" "postgres_people"
 check_health "mongodb" "mongodb"
 check_health "kafka" "kafka"
 check_health "postgres_stage" "postgres_stage"
 check_health "clickhouse" "clickhouse"
+
+check_http_service "Prometheus" "http://localhost:9090/-/ready"
+check_http_service "Alertmanager" "http://localhost:9093/-/ready"
 
 echo "Running data-generator..."
 docker-compose run --rm data-generator

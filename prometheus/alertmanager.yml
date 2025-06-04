@@ -1,0 +1,17 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  receiver: 'default'
+
+receivers:
+  - name: 'default'
+    email_configs:
+      - to: 'nemk.nst@gmail.com'
+        from: 'nemk.nst@gmail.com'
+        smarthost: 'smtp.gmail.com:587'
+        auth_username: 'nemk.nst@gmail.com'
+        auth_password: 'mvxo ifvq uwkl itwb'
+        require_tls: true

@@ -144,7 +144,7 @@ services:
 
   api-service:
     build:
-      context: .
+      context: ./app
       dockerfile: Dockerfile.app
     container_name: api-service
     depends_on:
@@ -170,6 +170,62 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning
     environment:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource
+    networks:
+      - etl_net
+
+  kafka_exporter:
+    image: danielqsj/kafka-exporter
+    ports:
+      - "9308:9308"
+    environment:
+      - KAFKA_URI=kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - etl_net
+
+  clickhouse_exporter:
+    image: flant/clickhouse-exporter
+    container_name: clickhouse_exporter
+    environment:
+      - CLICKHOUSE_SERVER=clickhouse:8123
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD="custom_password"
+    ports:
+      - "9363:9363"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "http://localhost:9363/metrics", "-O", "-"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - etl_net
+
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: alertmanager
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    ports:
+      - "9093:9093"
+    networks:
+      - etl_net
+
+  prometheus:
+    image: prom/prometheus:v2.46.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alerts:/etc/prometheus/alerts
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
     networks:
       - etl_net
 
