@@ -11,7 +11,7 @@ package "Stage layer" as Stage {
   [DataBase] as db
 }
 
-package "Processing" {
+package "Processing" as Processing {
   package "Batch" {
     [Airflow] as airflow
   }
@@ -29,12 +29,26 @@ package "Analytics" as Analytics {
   [Grafana] as grafana
 }
 
+package "Adding data API" as API {
+  [API] as api
+} 
+
+package "Monitoring" as Monitoring {
+  [Prometheus] as prom
+}
+
+api --> Data
+
 pg --> db
 mongo --> db
 kafka --> db
 
 db <--> kafka2
 db <--> airflow
+
+prom --> Processing
+prom --> Storage
+
 airflow --> ch
 kafka2 --> ch
 
@@ -46,16 +60,22 @@ note right of Data
   Продажи
 end note
 
-note right of Stage
-  Промежуточный слой
+note right of api
+  Добавление новых данных 
+  в исходные хранилища
 end note
 
-note right of Storage
+note top of prom
+  Мониторинг состояния
+  (Airflow, Kafka и ClickHouse)
+end note
+
+note left of ch
   Агрегированные витрины
   (данные за последние 6 месяцев)
 end note
 
-note right of Analytics
+note right of grafana
   Дашборды
 end note
 @enduml
