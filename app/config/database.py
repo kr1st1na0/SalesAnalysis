@@ -8,23 +8,23 @@ from fastapi import HTTPException
 async def startup_event():
     try:
         # PostgreSQL
-        #! localhost заменяем на postgres_people
         pg_conn = await asyncpg.connect(
-            host="localhost",
+            host="postgres_people",
             database="people",
             user="admin",
             password="admin"
         )
 
         # MongoDB
-        #! заменяем "mongodb://admin:admin@mongodb:27017/"
-        mongo_client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
+        mongo_client = motor.motor_asyncio.AsyncIOMotorClient(
+            "mongodb://admin:admin@mongodb:27017"
+        )
         await mongo_client.admin.command('ping')
 
         # Kafka
         #! localhost заменяем на kafka
         kafka_producer = aiokafka.AIOKafkaProducer(
-            bootstrap_servers="localhost:9092",
+            bootstrap_servers="kafka:9092",
             value_serializer=lambda x: json.dumps(x).encode('utf-8'),
             api_version="2.5.0"
         )

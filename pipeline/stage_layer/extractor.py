@@ -1,48 +1,48 @@
 from pymongo import MongoClient
 import psycopg2
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer, KafkaProducer
 import json
-from bson import ObjectId
+from datetime import datetime
 
-# Инициализация сорсов
+BATCH_SIZE = 100
+
 def init_postgres():
-    conn = psycopg2.connect(
+    return psycopg2.connect(
         host="postgres_people",
         database="people",
         user="admin",
         password="admin"
     )
-    return conn
 
 def init_mongodb():
-    client = MongoClient(
-        "mongodb://admin:admin@mongodb:27017/"
-    )
+    client = MongoClient("mongodb://admin:admin@mongodb:27017/")
     return client.sales
 
-def init_kafka():
+def init_kafka_consumer():
     return KafkaConsumer(
         'sales',
         bootstrap_servers=['kafka:9092'],
         auto_offset_reset='earliest',
-        group_id='clickhouse_group',
+        group_id='extractor_group',
         value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )
 
-# Инициализация стейдж слоя
+def init_kafka_producer():
+    return KafkaProducer(
+        bootstrap_servers=['kafka:9092'],
+        value_serializer=lambda m: json.dumps(m).encode('utf-8')
+    )
+
 def init_stage_layer():
-    conn = psycopg2.connect(
+    return psycopg2.connect(
         host="postgres_stage",
         database="stage_layer",
         user="admin",
         password="admin"
     )
-    return conn
 
-# Создание таблицы в стейдж слое
 def create_table():
-    command = (
-        """
+    command = """
         CREATE TABLE IF NOT EXISTS mock_data (
             id SERIAL PRIMARY KEY,
             customer_first_name VARCHAR(255),
@@ -66,7 +66,7 @@ def create_table():
             product_stock_quantity INT,
             product_manufacturer VARCHAR(225),
             product_created_at TIMESTAMP,
-
+            
             sale_customer_id INT,
             sale_seller_id INT,
             sale_product_id INT,
@@ -75,9 +75,7 @@ def create_table():
             sale_amount NUMERIC(10,2),
             sale_discount NUMERIC(10,2)
         )
-        """
-    )
-
+    """
     conn = init_stage_layer()
     cur = conn.cursor()
     cur.execute(command)
@@ -85,11 +83,9 @@ def create_table():
     cur.close()
     conn.close()
 
-# Берем данные из PostgreSQL
 def get_customer(customer_id):
     conn = init_postgres()
     cur = conn.cursor()
-
     cur.execute("""
         SELECT first_name, last_name, email, phone, registration_date, loyalty_level
         FROM customers WHERE customer_id = %s
@@ -109,11 +105,9 @@ def get_customer(customer_id):
     else:
         return {k: None for k in ["first_name", "last_name", "email", "phone", "registration_date", "loyalty_level"]}
 
-
 def get_seller(seller_id):
     conn = init_postgres()
     cur = conn.cursor()
-
     cur.execute("""
         SELECT first_name, last_name, email, phone, hire_date, department
         FROM sellers WHERE seller_id = %s
@@ -133,7 +127,6 @@ def get_seller(seller_id):
     else:
         return {k: None for k in ["first_name", "last_name", "email", "phone", "hire_date", "department"]}
 
-# Берем данные из MongoDB
 def get_product(product_num_id):
     db = init_mongodb()
     try:
@@ -143,7 +136,6 @@ def get_product(product_num_id):
         return {k: None for k in [
             "name", "category", "price", "cost", "stock_quantity", "manufacturer", "created_at"
         ]}
-
     if product:
         return {
             "name": product.get("name"),
@@ -159,18 +151,18 @@ def get_product(product_num_id):
             "name", "category", "price", "cost", "stock_quantity", "manufacturer", "created_at"
         ]}
 
-
-# Берем данные из Kafka и запись всего стейдж слой
 def consume_and_merge_sales():
-    consumer = init_kafka()
+    consumer = init_kafka_consumer()
+    producer = init_kafka_producer()
     pg_conn = init_stage_layer()
     pg_cur = pg_conn.cursor()
+
+    batch_count = 0
 
     for message in consumer:
         sale = message.value
 
         try:
-            # Извлекаем данные из Kafka
             sale_customer_id = sale.get('customer_id')
             sale_seller_id = sale.get('seller_id')
             sale_product_id = sale.get('product_id')
@@ -179,23 +171,18 @@ def consume_and_merge_sales():
             sale_amount = sale.get('amount')
             sale_discount = sale.get('discount', 0)
 
-            # Получаем данные из других источников
             customer = get_customer(sale_customer_id)
             seller = get_seller(sale_seller_id)
             product = get_product(sale_product_id)
 
-            # Вставляем в таблицу стейдж слоя
             pg_cur.execute("""
                 INSERT INTO mock_data (
                     customer_first_name, customer_last_name, customer_email, customer_phone,
                     customer_registration_date, customer_loyalty_level,
-                    
                     seller_first_name, seller_last_name, seller_email, seller_phone,
                     seller_hire_date, seller_department,
-                    
                     product_name, product_category, product_price, product_cost,
                     product_stock_quantity, product_manufacturer, product_created_at,
-                    
                     sale_customer_id, sale_seller_id, sale_product_id,
                     sale_quantity, sale_date, sale_amount, sale_discount
                 ) VALUES (
@@ -207,32 +194,36 @@ def consume_and_merge_sales():
             """, (
                 customer["first_name"], customer["last_name"], customer["email"], customer["phone"],
                 customer["registration_date"], customer["loyalty_level"],
-                
                 seller["first_name"], seller["last_name"], seller["email"], seller["phone"],
                 seller["hire_date"], seller["department"],
-                
                 product["name"], product["category"], product["price"], product["cost"],
                 product["stock_quantity"], product["manufacturer"], product["created_at"],
-                
                 sale_customer_id, sale_seller_id, sale_product_id,
                 sale_quantity, sale_date, sale_amount, sale_discount
             ))
 
-            pg_conn.commit()
+            batch_count += 1
+
+            if batch_count >= BATCH_SIZE:
+                pg_conn.commit()
+                producer.send('control', {'event': 'data_ready', 'source': 'extractor'})
+                producer.flush()
+                batch_count = 0
 
         except Exception as e:
             print(f"Error processing sale: {e}")
             pg_conn.rollback()
 
+    if batch_count > 0:
+        pg_conn.commit()
+        producer.send('control', {'event': 'data_ready', 'source': 'extractor'})
+        producer.flush()
+
     pg_cur.close()
     pg_conn.close()
 
-
 if __name__ == '__main__':
-    print("Starting extracting data...")
-
+    print("Starting extractor...")
     create_table()
-
     consume_and_merge_sales()
-
-    print("Success: data in stage layer")
+    print("Extractor finished.")

@@ -2,7 +2,7 @@
 set -e
 
 echo "Starting core services..."
-docker-compose up -d postgres_people mongodb kafka postgres_stage clickhouse zookeeper spark-master spark-worker grafana
+docker-compose up -d postgres_people mongodb kafka postgres_stage clickhouse zookeeper grafana
 
 check_health() {
   service_name=$1
@@ -29,6 +29,9 @@ docker-compose run --rm data-generator
 
 echo "Starting data-processing..."
 docker-compose up -d data-processing
+
+echo "Starting API-service..."
+docker-compose up -d api-service
 
 echo "Initializing Airflow DB and creating user..."
 docker-compose run --rm airflow-webserver bash -c "

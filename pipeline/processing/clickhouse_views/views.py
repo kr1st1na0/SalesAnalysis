@@ -1,9 +1,50 @@
+import time
 from clickhouse_driver import Client
+
+REQUIRED_TABLES = {
+    "customers": "SELECT count() FROM customers",
+    "sellers": "SELECT count() FROM sellers",
+    "products": "SELECT count() FROM products",
+    "sales_facts": "SELECT count() FROM sales_facts",
+}
+
+def wait_for_required_tables(client, timeout=600):
+    print("[ClickHouse] Ожидание загрузки всех необходимых таблиц...")
+    start_time = time.time()
+    ready = {table: False for table in REQUIRED_TABLES}
+
+    while True:
+        for table, query in REQUIRED_TABLES.items():
+            if ready[table]:
+                continue
+            try:
+                result = client.execute(query)
+                count = result[0][0]
+                if count > 0:
+                    ready[table] = True
+                    print(f"[ClickHouse] Таблица '{table}' готова ({count} строк).")
+                else:
+                    print(f"[ClickHouse] Таблица '{table}' существует, но пуста.")
+            except Exception as e:
+                if "doesn't exist" in str(e):
+                    print(f"[ClickHouse] Таблица '{table}' ещё не создана.")
+                else:
+                    print(f"[ClickHouse] Ошибка при проверке таблицы '{table}': {e}")
+
+        if all(ready.values()):
+            print("[ClickHouse] Все таблицы готовы. Продолжаем.")
+            break
+
+        if time.time() - start_time > timeout:
+            raise TimeoutError("Превышено время ожидания загрузки всех таблиц.")
+
+        time.sleep(30)
 
 def create_views():
     client = Client(host='clickhouse')
+    wait_for_required_tables(client)
 
-    # 1. Средний чек по продавцам (за 6 месяцев) с ФИО продавца
+    # 1. Средний чек по продавцам (за 6 месяцев)
     client.execute('''
     CREATE MATERIALIZED VIEW IF NOT EXISTS avg_check_by_seller
     ENGINE = AggregatingMergeTree
@@ -19,7 +60,7 @@ def create_views():
     GROUP BY seller_full_name
     ''')
 
-    # 2. Топ-10 товаров по выручке (6 месяцев) с названием товара
+    # 2. Топ-10 товаров по выручке
     client.execute('''
     CREATE MATERIALIZED VIEW IF NOT EXISTS top_products
     ENGINE = AggregatingMergeTree
@@ -34,7 +75,7 @@ def create_views():
     GROUP BY product_name
     ''')
 
-    # 3. Дневная динамика продаж (6 месяцев)
+    # 3. Дневная динамика продаж
     client.execute('''
     CREATE MATERIALIZED VIEW IF NOT EXISTS daily_sales_summary
     ENGINE = SummingMergeTree
@@ -64,7 +105,7 @@ def create_views():
     GROUP BY product_category
     ''')
 
-    # 5. Почасовая активность продаж (за 7 дней)
+    # 5. Почасовая активность продаж (7 дней)
     client.execute('''
     CREATE MATERIALIZED VIEW IF NOT EXISTS hourly_sales_activity
     ENGINE = SummingMergeTree
@@ -80,6 +121,6 @@ def create_views():
     ''')
 
 if __name__ == '__main__':
-    print("Start create...")
+    print("[ClickHouse] Запуск создания витрин...")
     create_views()
-    print("Done!!!!")
+    print("[ClickHouse] Все витрины созданы.")

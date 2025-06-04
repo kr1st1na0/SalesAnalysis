@@ -9,6 +9,7 @@ COPY pipeline/ ./pipeline/
 
 CMD bash -c "\
     python -u /app/pipeline/stage_layer/extractor.py & \
-    sleep 300 && python -u /app/pipeline/processing/streaming/kafka-ch.py & \
-    sleep 420 && python -u /app/pipeline/processing/clickhouse_views/views.py && \
+    python -u /app/pipeline/processing/streaming/producer.py & \
+    python -u /app/pipeline/processing/streaming/consumer.py & \
+    python -u /app/pipeline/processing/clickhouse_views/views.py & \
     wait"

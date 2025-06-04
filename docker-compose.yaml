@@ -106,34 +106,10 @@ services:
       retries: 10
     networks:
       - etl_net
-
-  spark-master:
-    image: bitnami/spark:3.4.0
-    container_name: spark-master
-    environment:
-      - SPARK_MODE=master
-    ports:
-      - "8080:8080"
-      - "7077:7077"
-    networks:
-      - etl_net
-
-  spark-worker:
-    image: bitnami/spark:3.4.0
-    container_name: spark-worker
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_WORKER_CORES=2
-    depends_on:
-      - spark-master
-    networks:
-      - etl_net
       
   airflow-webserver:
     build:
-      context: .
+      context: ./app
       dockerfile: Dockerfile.airflow
     container_name: airflow-webserver
     depends_on:
@@ -152,7 +128,7 @@ services:
   airflow-scheduler:
     build:
       context: .
-      dockerfile: Dockerfile.airflow
+      dockerfile: pipeline/processing/batch/Dockerfile.airflow
     container_name: airflow-scheduler
     depends_on:
       postgres_stage:
@@ -163,6 +139,22 @@ services:
     volumes:
       - ./pipeline/processing/batch:/opt/airflow/dags
     command: scheduler
+    networks:
+      - etl_net
+
+  api-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: api-service
+    depends_on:
+      - postgres_people
+      - mongodb
+      - kafka
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "8000:8000"
     networks:
       - etl_net
 
@@ -185,7 +177,7 @@ services:
     container_name: data-generator
     build:
       context: .
-      dockerfile: Dockerfile.data-generator
+      dockerfile: data/Dockerfile.data-generator
     depends_on:
       postgres_people:
         condition: service_healthy
@@ -202,7 +194,7 @@ services:
     container_name: data-processing
     build:
       context: .
-      dockerfile: Dockerfile.data-processing
+      dockerfile: pipeline/Dockerfile.data-processing
     depends_on:
       postgres_stage:
         condition: service_healthy
@@ -215,6 +207,7 @@ services:
       - ./pipeline/stage_layer:/app/pipeline/stage_layer
       - ./pipeline/processing/streaming:/app/pipeline/processing/streaming
       - ./pipeline/processing/clickhouse_views:/app/pipeline/processing/clickhouse_views
+    restart: always
     networks:
       - etl_net
 
